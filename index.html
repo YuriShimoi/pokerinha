@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeRinha</title>
+
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <div id="main">
+      <div id="container">
+        <div id="menu">
+          <h1>PokéRinha</h1>
+
+          <div id="arena-selector">
+            <button onclick="changeArena(-1)">◀</button>
+            <span id="arena-name">Planície</span>
+            <button onclick="changeArena(1)">▶</button>
+          </div>
+
+          <div id="pokemon-list"></div>
+          <div id="list-form">
+            <button id="generatePokemon" onclick="generatePokemonList(-1)">↻</button>
+
+            <input id="name-input" list="hintList" placeholder="Pokemon...">
+            <datalist id="hintList"></datalist>
+            <button id="addPokemon" onclick="addNewPokemon()">+</button>
+            
+            <button id="plusRandomPokemon" onclick="addNewPokemon(true)">1↻</button>
+          </div>
+
+          <button id="startgame" onclick="startBattle()">COMEÇAR</button>
+        </div>
+        <div>
+          <div id="winner-pokemon" hidden>
+            <h1>Vencedor!</h1>
+            <img class="pkm-sprite" src="">
+          </div>
+          <canvas id="arena" width="480" height="480"></canvas>
+          <canvas id="attack-arena" width="240" height="240"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script src="particle.js"></script>
+    <script src="api-helper.js"></script>
+    <script src="arena.js"></script>
+    <script src="pokemon-names.js"></script>
+    <script defer src="main.js"></script>
+  </body>
+</html>

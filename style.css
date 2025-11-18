@@ -1,0 +1,361 @@
+@font-face {
+  font-family: Pokemon;
+  src: url(font/Pokemon_Solid.ttf);
+}
+
+:root {
+  --dirt-background: url(data:image/png;base64,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);
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#main {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: var(--dirt-background);
+  background-blend-mode: luminosity;
+  background-size: 60px 40px;
+  background-color: #3692fc;
+}
+
+#container {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  max-width: 90%;
+  justify-content: center;
+  align-items: center;
+}
+
+#winner-pokemon {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+
+  width: fit-content;
+  height: fit-content;
+  padding: 20px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  color: white;
+  background: #00000088;
+  border-radius: 8px;
+  font-family: cursive;
+  font-size: 20px;
+
+  animation: winnerPopIn 300ms ease-out;
+}
+#winner-pokemon[hidden] {
+  display: none;
+  animation: none;
+}
+#winner-pokemon h1 {
+  font-family: Pokemon;
+  letter-spacing: 6px;
+  -webkit-text-stroke: 1px white;
+  color: transparent;
+  font-size: 36px;
+  margin: 0 0 24px 0;
+  line-height: 30px;
+}
+#winner-pokemon .pkm-sprite {
+  width: 192px;
+  image-rendering: auto;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+#attack-arena {
+  margin-top: -100%;
+  width: 100%;
+  max-width: 480px;
+  transform: translateY(-18px);
+  shape-rendering: crispedges;
+  image-rendering: pixelated;
+}
+
+#arena {
+  width: 100%;
+  height: 1%;
+  max-width: 480px;
+  aspect-ratio: 1;
+  box-shadow: 0 0 0 3px #346ad4;
+  background-color: #111111;
+  background-size: contain;
+  background-repeat: no-repeat;
+  shape-rendering: crispedges;
+  image-rendering: pixelated;
+}
+
+#menu {
+  display: flex;
+  flex-grow: 1;
+  max-width: 400px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+#menu h1 {
+  position: relative;
+  z-index: 1;
+
+  font-family: Pokemon;
+  text-align: center;
+  margin-top: 0;
+  margin-bottom: 30px;
+  line-height: 48px;
+  font-size: 48px;
+  color: #ffda08;
+  letter-spacing: 3px;
+  -webkit-text-stroke: 1px #244cd1;
+  text-shadow: -1px 1px 0 #16359c, -2px 2px 0 #16359c, -3px 3px 0 #16359c;
+}
+
+#menu h1:before {
+  position: fixed;
+
+  content: "PokéRinha";
+  color: transparent;
+  text-shadow: none;
+  -webkit-text-stroke: 1px #16359c44;
+  margin-top: 2px;
+}
+
+#arena-selector {
+  display: flex;
+  color: #02266c;
+}
+
+#arena-name {
+  min-width: 200px;
+  text-align: center;
+  font-family: cursive;
+  font-size: 1.4rem;
+  font-weight: bold;
+}
+
+#arena-selector button {
+  border: none;
+  background: transparent;
+  border-radius: 3px;
+  color: #02266c;
+  font-size: 1.4rem;
+  line-height: 1rem;
+  cursor: pointer;
+  transform: scale(0.8);
+  transition: color 120ms ease, transform 80ms ease-out;
+}
+#arena-selector button:hover {
+  color: white;
+  transform: scale(1.2) translateY(1px);
+}
+
+#pokemon-list {
+  display: flex;
+  width: 100%;
+  min-height: 100px;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: #00003322;
+  border-radius: 6px 6px 0 0;
+  padding: 8px 0;
+}
+
+#pokemon-list .pokemon-info {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 138px;
+  margin: -12px 0 -120px 0;
+  border-radius: 3px;
+
+  background: #ffda08;
+  box-shadow: 0 0 0 3px #244cd1, inset 2px 3px 0 0 #16359c44;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 80ms ease;
+  
+  span.pkm-name {
+    display: inline-block;
+    width: 100%;
+    max-width: 96px;
+    margin-top: 1px;
+
+    font-size: 14px;
+    font-family: cursive;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  button.pkm-remove {
+    display: block;
+    position: relative;
+    
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+
+    border: none;
+    padding: 0;
+    margin: -5px 2px -17px auto;
+
+    background: #00000033;
+    color: white;
+
+    cursor: pointer;
+    pointer-events: all;
+  }
+
+  button.pkm-remove::after {
+    content: 'X';
+    line-height: 20px;
+    font-family: cursive;
+    font-weight: bold;
+  }
+
+  button.pkm-remove:hover {
+    background: white;
+    color: black;
+  }
+
+  div.pkm-background {
+    width: 96px;
+    height: 88px;
+    background: radial-gradient(#00000038 50%, transparent 55%);;
+    margin: -8px 0 -4px 0;
+  }
+
+  span.pkm-stats {
+    display: block;
+    margin: 3px 0 0 4px;
+    height: 4px;
+    box-shadow: 2px 2px 0 0 #00000033;
+  }
+}
+
+#pokemon-list .pokemon-container:hover {
+  .pokemon-info {
+    opacity: 1;
+  }
+  img {
+    z-index: 3;
+  }
+}
+
+#pokemon-list img {
+  position: relative;
+  pointer-events: none;
+}
+
+#list-form {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  
+  width: 100%;
+  height: 30px;
+  margin-top: -10px;
+  gap: 1px;
+
+  overflow: hidden;
+  border-radius: 0 0 6px 6px;
+  background-color: #346ad4;
+
+  font-size: 1.2rem;
+  color: white;
+}
+
+#name-input {
+  flex-grow: 1;
+  border: none;
+  margin: 0;
+  padding: 0 10px;
+  height: 30px;
+  outline: none;
+}
+
+#addPokemon,
+#plusRandomPokemon,
+#generatePokemon {
+  width: 50px;
+  height: 30px;
+
+  border: none;
+  background-color: #063aa1;
+
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 20px;
+  line-height: 24px;
+}
+#plusRandomPokemon {
+  font-size: 16px;
+}
+#generatePokemon {
+  background-color: #ffda08;
+  color: #02266c;
+}
+#addPokemon:hover,
+#plusRandomPokemon:hover {
+  background-color: #8eb4ff;
+  color: #02266c;
+}
+#generatePokemon:hover {
+  background-color: #b69b02;
+  color: white;
+}
+
+#startgame {
+  width: 100%;
+  margin-top: 20px;
+  background: #ffda08;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 15px;
+  box-shadow: inset 0 -4px #00000033, 0 5px 0 0 #244cd1;
+
+  color: #02266c;
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: pointer;
+
+  transition: all 80ms ease;
+}
+
+#startgame:active, #startgame:focus {
+  background: white;
+  box-shadow: inset 0 0px #00000033, 0 2px 0 0 #244cd1;
+  padding: 10px 15px 6px 15px;
+  margin-top: 24px;
+}
+
+@keyframes winnerPopIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98) translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) translateY(0);
+  }
+}
