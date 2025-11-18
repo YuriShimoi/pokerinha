@@ -28,7 +28,6 @@ let arenaindex = 1;
 let pkmList = [];
 
 function pkmDelete(pid) {
-  $winner.setAttribute('hidden', true);
   pkmList.splice(pkmList.findIndex(pkm => pkm.id === pid), 1);
   $pokemonlist.querySelector(`.pokemon-container[pid='${pid}']`).remove();
 }
@@ -44,7 +43,6 @@ function fillDatalist() {
 }
 
 async function addNewPokemon(random=false) {
-  $winner.setAttribute('hidden', true);
   if(random) {
     // let pmkmax = await PokemonAPI.getPokemonCount();
     let pmkmax = 806; // pokemon that has badge img
@@ -117,7 +115,6 @@ function pkmElement(pokemon) {
 }
 
 async function generatePokemonList(amount=4) {
-  $winner.setAttribute('hidden', true);
   if(amount === -1) amount = pkmList.length;
 
   $pokemonlist.innerHTML = '';
@@ -129,7 +126,6 @@ async function generatePokemonList(amount=4) {
 }
 
 function changeArena(dir=1) {
-  $winner.setAttribute('hidden', true);
   arenaindex = arenaindex + dir < 0? arenaimg.length-1: arenaindex + dir >= arenaimg.length? 0: arenaindex + dir;
 
   $arenaname.innerHTML = arenaimg[arenaindex].name;
@@ -138,7 +134,6 @@ function changeArena(dir=1) {
 
 function startBattle() {
   if(!pkmList.length) return;
-  
   $winner.setAttribute('hidden', true);
 
   let loads = pkmList.length;
