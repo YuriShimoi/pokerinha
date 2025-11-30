@@ -138,7 +138,7 @@ function startBattle() {
 
   let loads = pkmList.length;
   let pkmimg = [];
-  Arena.clear();
+  Arena.stop();
   Arena.pokemon = [];
   Arena.attack = [];
 

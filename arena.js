@@ -160,6 +160,11 @@ class Arena {
     }
   }
 
+  static stop() {
+    Arena.clear();
+    Arena.inBattle = false;
+  }
+
   static start() {
     Arena.inBattle = true;
     clearInterval(Arena.interval);
