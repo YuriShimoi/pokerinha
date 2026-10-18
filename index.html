@@ -30,13 +30,17 @@
             <button id="plusRandomPokemon" onclick="addNewPokemon(true)">1↻</button>
           </div>
 
-          <button id="startgame" onclick="startBattle()">COMEÇAR</button>
+          <div id="start-row">
+            <button id="startgame" onclick="startBattle()">COMEÇAR</button>
+            <button id="speed" onclick="toggleSpeed()" title="Velocidade da batalha">1x</button>
+          </div>
         </div>
         <div>
           <div id="winner-pokemon" hidden>
-            <button onclick="$winner.setAttribute('hidden', true);">X</button>
-            <h1>Vencedor!</h1>
+            <button class="close" onclick="$winner.setAttribute('hidden', true);">X</button>
+            <h1 id="winner-title">Vencedor!</h1>
             <img class="pkm-sprite" src="">
+            <ol id="ranking"></ol>
           </div>
           <canvas id="arena" width="480" height="480"></canvas>
           <canvas id="attack-arena" width="240" height="240"></canvas>

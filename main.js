@@ -4,9 +4,12 @@ const $arenaname = document.getElementById('arena-name');
 
 const $pokemonlist = document.getElementById('pokemon-list');
 const $winner = document.getElementById('winner-pokemon');
+const $winnertitle = document.getElementById('winner-title');
+const $ranking = document.getElementById('ranking');
 
 const $nameinput = document.getElementById('name-input');
-const $guessbtn = document.getElementById('guess-btn');
+const $startbtn = document.getElementById('startgame');
+const $speedbtn = document.getElementById('speed');
 
 Arena.canvas = $arena;
 Arena.context = $arena.getContext('2d');
@@ -43,22 +46,35 @@ function fillDatalist() {
 }
 
 async function addNewPokemon(random=false) {
+  let uid = null;
   if(random) {
     // let pmkmax = await PokemonAPI.getPokemonCount();
     let pmkmax = 806; // pokemon that has badge img
-    let randomUid = Math.round(Math.random() * pmkmax + 1);
-    let randomPkm = await PokemonAPI.getPokemon(randomUid);
-    pkmList.push(randomPkm);
-    $pokemonlist.appendChild(pkmElement(randomPkm));
-    return;
+    uid = Math.floor(Math.random() * pmkmax) + 1;
+  }
+  else {
+    const name = $nameinput.value.trim().toLowerCase();
+    if(!POKEMONNAMES.includes(name)) return inputError();
+    uid = name;
   }
 
-  if(!POKEMONNAMES.includes($nameinput.value.toLowerCase())) return;
-  let pokemon = await PokemonAPI.getPokemon($nameinput.value.toLowerCase());
-  if(pokemon) {
-    pkmList.push(pokemon);
-    $pokemonlist.appendChild(pkmElement(pokemon));
+  let pokemon = null;
+  try {
+    pokemon = await PokemonAPI.getPokemon(uid);
   }
+  catch {
+    return inputError();
+  }
+  pkmList.push(pokemon);
+  $pokemonlist.appendChild(pkmElement(pokemon));
+  if(!random) $nameinput.value = '';
+}
+
+// shakes the input when the name is unknown or the API didn't answer
+function inputError() {
+  $nameinput.classList.remove('error');
+  void $nameinput.offsetWidth;
+  $nameinput.classList.add('error');
 }
 
 function pkmElement(pokemon) {
@@ -133,36 +149,66 @@ function changeArena(dir=1) {
 }
 
 function startBattle() {
-  if(!pkmList.length) return;
+  if(pkmList.length < 2) return inputError();
   $winner.setAttribute('hidden', true);
 
   let loads = pkmList.length;
-  let pkmimg = [];
   Arena.stop();
   Arena.pokemon = [];
   Arena.attack = [];
-
-  for(let p=0; p < pkmList.length; p++) {
-    pkmimg.push(document.createElement('IMG'));
-    pkmimg[p].src = pkmList[p].sprite.icon;
-    pkmimg[p].onload = () => {
-      let rndPos = [Math.round(Math.random() * 400 + 10), Math.round(Math.random() * 400 + 10)];
-      Arena.register(pkmList[p], pkmimg[p], rndPos[0], rndPos[1]);
-      loads--;
-      checkForLoadings();
-    };
-  }
+  Arena.clock = 0;
+  $startbtn.disabled = true;
 
   const checkForLoadings = () => {
-    if(loads > 0) return;
+    if(--loads > 0) return;
+    $startbtn.disabled = false;
     Arena.start();
+  };
+
+  for(const pokemon of pkmList) {
+    // newer pokemon have no gen-vii icon: fall back to the front sprite, then to MissingNo
+    const sources = [pokemon.sprite.icon, pokemon.sprite.default, PokemonAPI.MISSINGNOB64].filter(Boolean);
+    const img = document.createElement('IMG');
+    img.onload = () => {
+      img.dataset.icon = String(img.src === pokemon.sprite.icon);
+      let rndPos = [Math.round(Math.random() * 400 + 10), Math.round(Math.random() * 400 + 10)];
+      Arena.register(pokemon, img, rndPos[0], rndPos[1]);
+      checkForLoadings();
+    };
+    img.onerror = () => {
+      sources.shift();
+      if(sources.length) img.src = sources[0];
+      else checkForLoadings();
+    };
+    img.src = sources[0];
   }
 }
 
-function endBattle(winner) {
-  const pokemon = pkmList.find(pkm => pkm.name === winner.name);
+function endBattle(winner, ranking) {
   $winner.removeAttribute('hidden');
-  $winner.getElementsByClassName('pkm-sprite')[0].src = pokemon.sprite.animated?? pokemon.sprite.default;
+  $winnertitle.innerHTML = winner? 'Vencedor!': 'Empate!';
+  const $sprite = $winner.getElementsByClassName('pkm-sprite')[0];
+  if(winner) $sprite.src = winner.source.sprite.animated || winner.source.sprite.default;
+  $sprite.hidden = !winner;
+
+  // podium: winner first, then in reverse knock-out order
+  $ranking.innerHTML = '';
+  ranking.slice(0, 3).forEach((entry, i) => {
+    const $li = document.createElement('LI');
+    const $icon = document.createElement('IMG');
+    $icon.src = entry.pokemon.image.src;
+    $li.appendChild($icon);
+    const $name = document.createElement('SPAN');
+    $name.innerHTML = `${i + 1}º ${entry.pokemon.name}`;
+    $li.appendChild($name);
+    $ranking.appendChild($li);
+  });
+}
+
+function toggleSpeed() {
+  Arena.speed = Arena.speed === 1? 2: 1;
+  $speedbtn.innerHTML = `${Arena.speed}x`;
+  $speedbtn.classList.toggle('fast', Arena.speed > 1);
 }
 
 $arena.style.backgroundImage = `url(${arenaimg[arenaindex].src})`;

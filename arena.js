@@ -1,25 +1,38 @@
 class Arena {
   static pokemon = [];
   static attack = [];
+  static floaters = [];   // floating damage numbers
+  static ranking = [];    // knocked-out pokemon, first KO first
 
   static canvas = null;
   static context = null;
   static attackCanvas = null;
   static attackContext = null;
-  
+
   static inBattle = false;
   static interval = null;
 
-  static onStop = (winner) => {};
-  
+  static FRAME = 1000 / 60;
+  static clock = 0;       // battle time in ms; runs faster with speed > 1
+  static speed = 1;
+
+  static DAMAGE_POWER = 14;       // average hit is about this much at equal attack/defense
+  static SUDDEN_DEATH = 45000;    // after this, every hit gets stronger and immunities still scratch
+  static SUDDEN_DEATH_STEP = 10000;
+
+  static onStop = (winner, ranking) => {};
+
   static register(pokemon, img, px, py) {
     let newPkm = {
       id: Arena.pokemon.length,
       alive: true,
       name: pokemon.name,
+      source: pokemon,
       stats: pokemon.stats.reduce((acc, s) => ({...acc, [s.name.replaceAll('-', '')]:s.base}), {}),
       types: pokemon.types,
       image: img,
+      // gen-vii icons are 40x30 with the pokemon at (3,0,34,30); fallback sprites are drawn whole
+      crop: img.dataset.icon === 'true'? [3, 0, 34, 30]: [0, 0, img.naturalWidth, img.naturalHeight],
       pos: { x: px, y: py },
       direction: Math.round(Math.random() * 4 - 0.5) * 90 + 45,
       cooldown: { }
@@ -47,13 +60,41 @@ class Arena {
       Arena.context.fillRect(Math.round(pkm.pos.x)+10, Math.round(pkm.pos.y)+62, pkmHp, 4);
     }
     else Arena.context.globalAlpha = 0.5;
-    Arena.context.drawImage(pkm.image, 3, 0, 34, 30, Math.round(pkm.pos.x), Math.round(pkm.pos.y), 68, 60);
+    // blink while invulnerable after a hit
+    if(pkm.alive && pkm.cooldown.invulnerable > Arena.clock && Math.floor(Arena.clock / 100) % 2) Arena.context.globalAlpha = 0.4;
+    const [sx, sy, sw, sh] = pkm.crop;
+    Arena.context.drawImage(pkm.image, sx, sy, sw, sh, Math.round(pkm.pos.x), Math.round(pkm.pos.y), 68, 60);
     Arena.context.restore();
   }
 
   static drawAttack(atk) {
     atk.draw(Arena.attackContext);
   }
+
+  //#region [ Damage numbers ]
+  static addFloater(pkm, text, color) {
+    Arena.floaters.push({ x: pkm.pos.x + 34, y: pkm.pos.y + 4, text, color, until: Arena.clock + 900 });
+  }
+
+  static drawFloaters() {
+    const ctx = Arena.context;
+    ctx.save();
+    ctx.font = 'bold 16px cursive';
+    ctx.textAlign = 'center';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#000000aa';
+    Arena.floaters = Arena.floaters.filter(f => f.until > Arena.clock);
+    for(const f of Arena.floaters) {
+      const left = (f.until - Arena.clock) / 900;
+      ctx.globalAlpha = Math.min(1, left * 2);
+      const y = f.y - (1 - left) * 24;
+      ctx.strokeText(f.text, f.x, y);
+      ctx.fillStyle = f.color;
+      ctx.fillText(f.text, f.x, y);
+    }
+    ctx.restore();
+  }
+  //#endregion
 
   static calcPos(pos, dir, speed) {
     if(speed === 0) return pos;
@@ -94,8 +135,12 @@ class Arena {
 
   static setCooldown(pkm) {
     pkm.cooldown.attack = 2500 - pkm.stats.speed * 7;
-    pkm.cooldown.time = Date.now() + pkm.cooldown.attack;
+    pkm.cooldown.time = Arena.clock + pkm.cooldown.attack;
     pkm.cooldown.invulnerable = 0;
+  }
+
+  static center(pkm) {
+    return { x: pkm.pos.x + 32, y: pkm.pos.y + 30 };
   }
 
   static getPokemonByDistance(pos, maxRadius=null) {
@@ -103,10 +148,7 @@ class Arena {
 
     for(let pkm of Arena.pokemon) {
       if(!pkm.alive) continue;
-      let cPos = {
-        x: pkm.pos.x + 32,
-        y: pkm.pos.y + 30
-      };
+      let cPos = Arena.center(pkm);
       let distance = Math.sqrt(Math.pow(pos.x - cPos.x, 2) + Math.pow(pos.y - cPos.y, 2));
       if(maxRadius === null || distance <= (maxRadius + 20)) {
         hits.push({ distance: distance, pokemon: pkm });
@@ -115,28 +157,28 @@ class Arena {
     return hits.sort((a, b) => a.distance - b.distance).map(hit => hit.pokemon);
   }
 
+  /** Closest other living pokemon, or undefined when it's the last one standing. */
+  static closestEnemy(pkm, maxRadius=null) {
+    return Arena.getPokemonByDistance(Arena.center(pkm), maxRadius).find(other => other.id !== pkm.id);
+  }
+
   static angleTo(origin, target) {
     const dx = Math.round((target.x - origin.x) * 1000000) / 1000000;
     const dy = Math.round((target.y - origin.y) * 1000000) / 1000000;
-    
+
     const angleRadians = Math.atan2(dy, dx);
     let angleDegrees = angleRadians * (180 / Math.PI);
-    
+
     if (angleDegrees < 0) {
         angleDegrees += 360;
     }
-    
+
     return Math.round(angleDegrees);
-}
+  }
 
   static tryAttack(pkm) {
-    if(pkm.cooldown.time <= Date.now()) {
-      let centeredPosition = {
-        x: pkm.pos.x + 32,
-        y: pkm.pos.y + 30
-      };
-
-      let closest = Arena.getPokemonByDistance(centeredPosition, 200)[1];
+    if(pkm.cooldown.time <= Arena.clock) {
+      let closest = Arena.closestEnemy(pkm, 200);
       if(!closest) return;
 
       let aimDir = Arena.angleTo(pkm.pos, closest.pos) + Math.round(Math.random()*60-30);
@@ -146,97 +188,129 @@ class Arena {
       let dmgType = Number(pkm.stats.attack < pkm.stats.specialattack);
       let newAtk = AttackLib[atkType].copy();
       newAtk.parent = pkm.id;
-      newAtk.lifeTime += Date.now();
+      newAtk.lifeTime += Arena.clock;
       newAtk.direction = aimDir;
-      newAtk.pos = centeredPosition;
+      newAtk.pos = Arena.center(pkm);
       newAtk.damage = {
         type: atkType,
         dmgType: dmgType,
-        amount: Math.ceil([pkm.stats.attack, pkm.stats.specialattack][dmgType])
+        amount: [pkm.stats.attack, pkm.stats.specialattack][dmgType]
       };
 
       Arena.attack.push(newAtk);
-      pkm.cooldown.time = Date.now() + pkm.cooldown.attack;
+      pkm.cooldown.time = Arena.clock + pkm.cooldown.attack;
+    }
+  }
+
+  /**
+   * Simplified main-series formula: attack/defense ratio times a base power, type multiplier and a 85-100% roll.
+   * Immune hits do nothing until sudden death, where everything hits harder and immunities still scratch.
+   */
+  static hit(pkm, atk) {
+    const multiplier = Calculator.typeMultiplier(atk.damage.type, pkm.types);
+    const defense = Math.max(1, [pkm.stats.defense, pkm.stats.specialdefense][atk.damage.dmgType]);
+    const overtime = Math.max(0, Math.floor((Arena.clock - Arena.SUDDEN_DEATH) / Arena.SUDDEN_DEATH_STEP) + 1);
+    const boost = 1 + overtime * 0.5;
+    let damage = Math.round(atk.damage.amount / defense * Arena.DAMAGE_POWER * multiplier * boost * (0.85 + Math.random() * 0.15));
+    if(multiplier > 0) damage = Math.max(1, damage);
+    else if(overtime) damage = Math.max(1, Math.round(boost));
+
+    if(damage === 0) {
+      Arena.addFloater(pkm, 'imune', '#cccccc');
+      pkm.cooldown.invulnerable = Arena.clock + 400;
+      return;
+    }
+    const color = multiplier > 1? '#ffb300': multiplier < 1? '#9e9e9e': '#ffffff';
+    Arena.addFloater(pkm, multiplier > 1? `${damage}!`: `${damage}`, color);
+
+    pkm.stats.hp -= damage;
+    if(pkm.stats.hp <= 0) {
+      pkm.stats.hp = 0;
+      pkm.alive = false;
+      Arena.ranking.unshift({ pokemon: pkm, time: Arena.clock });
+    }
+    else {
+      pkm.cooldown.invulnerable = Arena.clock + 1000;
     }
   }
 
   static stop() {
+    clearInterval(Arena.interval);
     Arena.clear();
     Arena.inBattle = false;
   }
 
   static start() {
     Arena.inBattle = true;
+    Arena.ranking = [];
+    Arena.floaters = [];
     clearInterval(Arena.interval);
-    
+
     Arena.interval = setInterval(() => {
-      Arena.clear();
-      for(let a=0; a < Arena.attack.length; a++) {
-        let atk = Arena.attack[a];
+      // 2x speed runs the simulation twice per frame
+      for(let s=0; s < Arena.speed && Arena.inBattle; s++) Arena.step();
+      Arena.render();
+      if(!Arena.inBattle) clearInterval(Arena.interval);
+    }, Arena.FRAME);
+  }
 
-        if(atk.lifeTime <= Date.now()) {
-          Arena.attack.splice(a, 1);
-          a--;
-          continue;
+  static step() {
+    Arena.clock += Arena.FRAME;
+
+    for(let a=0; a < Arena.attack.length; a++) {
+      let atk = Arena.attack[a];
+
+      if(atk.lifeTime <= Arena.clock) {
+        Arena.attack.splice(a, 1);
+        a--;
+        continue;
+      }
+      atk.pos = Arena.calcPos(atk.pos, atk.direction, atk.speed);
+
+      for(let pkm of Arena.getPokemonByDistance(atk.pos, atk.radius)) {
+        if(pkm.id !== atk.parent && pkm.alive && pkm.cooldown.invulnerable < Arena.clock) Arena.hit(pkm, atk);
+      }
+    }
+
+    for(let pkm of Arena.pokemon) {
+      if(!pkm.alive) continue;
+      let newpos = Arena.calcPos(pkm.pos, pkm.direction, pkm.stats.speed);
+      let boundary = Arena.isOutOfBounds(newpos);
+      if(boundary !== null) {
+        const closest = Arena.closestEnemy(pkm);
+        if(closest && Math.random()*100 < 20) {
+          pkm.direction = Arena.angleTo(pkm.pos, closest.pos);
         }
-        atk.pos = Arena.calcPos(atk.pos, atk.direction, atk.speed);
-
-        let hitTargets = Arena.getPokemonByDistance(atk.pos, atk.radius);
-        for(let pkm of hitTargets) {
-          if(pkm.id !== atk.parent && pkm.alive && pkm.cooldown.invulnerable < Date.now()) {
-            const multiplier = Calculator.typeMultiplier(atk.damage.type, pkm.types);
-            let defense = [pkm.stats.defense, pkm.stats.specialdefense][atk.damage.dmgType];
-            let damage = (atk.damage.amount * multiplier) - defense;
-            pkm.stats.hp -= damage <= 0? 1: damage;
-            if(pkm.stats.hp <= 0) {
-              pkm.stats.hp = 0;
-              pkm.alive = false;
-            }
-            else {
-              pkm.cooldown.invulnerable = Date.now() + 1000;
-            }
-          }
+        else {
+          pkm.direction = Arena.bounceDirection(pkm.direction, boundary);
         }
-
-        Arena.drawAttack(atk);
+      }
+      else {
+        pkm.pos = newpos;
       }
 
-      for(let pkm of Arena.pokemon) {
-        if(pkm.alive) {
-          let newpos = Arena.calcPos(pkm.pos, pkm.direction, pkm.stats.speed);
-          let boundary = Arena.isOutOfBounds(newpos);
-          if(boundary !== null) {
-            if(Math.random()*100 < 20) {
-              let closest = Arena.getPokemonByDistance(pkm.pos, 1200)[1];
-              pkm.direction = Arena.angleTo(pkm.pos, closest.pos);
-            }
-            else {
-              pkm.direction = Arena.bounceDirection(pkm.direction, boundary);
-            }
-          }
-          else {
-            pkm.pos = newpos;
-          }
-  
-          Arena.tryAttack(pkm);
-        }
-        Arena.draw(pkm);
-      }
+      Arena.tryAttack(pkm);
+    }
 
-      if(Arena.pokemon.filter(p => p.alive).length === 1) {
-        Arena.callEnd();
-        Arena.inBattle = false;
-      }
+    // one left wins; none left (last two fainted together) is a draw
+    if(Arena.pokemon.filter(p => p.alive).length <= 1) {
+      Arena.callEnd();
+      Arena.inBattle = false;
+    }
+  }
 
-      if(!Arena.inBattle) {
-        clearInterval(Arena.interval);
-      }
-    }, 1000/60);
+  static render() {
+    Arena.clear();
+    for(const atk of Arena.attack) Arena.drawAttack(atk);
+    for(const pkm of Arena.pokemon) Arena.draw(pkm);
+    Arena.drawFloaters();
   }
 
   static callEnd() {
     if(Arena.inBattle) {
-      Arena.onStop(Arena.pokemon.find(pkm => pkm.alive));
+      const winner = Arena.pokemon.find(pkm => pkm.alive) ?? null;
+      const ranking = [...(winner? [{ pokemon: winner, time: Arena.clock }]: []), ...Arena.ranking];
+      Arena.onStop(winner, ranking, Arena.clock);
     }
   }
 }

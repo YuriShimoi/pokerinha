@@ -62,7 +62,7 @@ html, body {
   display: none;
   animation: none;
 }
-#winner-pokemon button {
+#winner-pokemon button.close {
   z-index: 5;
   margin: -5px -5px 10px auto;
   border: none;
@@ -75,8 +75,32 @@ html, body {
   font-size: 20px;
   cursor: pointer;
 }
-#winner-pokemon button:hover {
+#winner-pokemon button.close:hover {
   color: white;
+}
+#winner-pokemon .pkm-sprite[hidden] {
+  display: none;
+}
+#ranking {
+  list-style: none;
+  margin: 10px 0 0 0;
+  padding: 0;
+  font-size: 16px;
+}
+#ranking li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#ranking li:first-child {
+  color: #ffda08;
+  font-weight: bold;
+}
+#ranking img {
+  width: 40px;
+  height: 30px;
+  object-fit: contain;
+  image-rendering: pixelated;
 }
 #winner-pokemon h1 {
   font-family: Pokemon;
@@ -339,6 +363,48 @@ html, body {
 #generatePokemon:hover {
   background-color: #b69b02;
   color: white;
+}
+
+#start-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  align-items: flex-start;
+}
+#speed {
+  width: 72px;
+  flex-shrink: 0;
+  margin-top: 20px;
+  padding: 10px 0;
+  border: none;
+  border-radius: 6px;
+  background: #346ad4;
+  box-shadow: inset 0 -4px #00000033, 0 5px 0 0 #244cd1;
+  color: white;
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+#speed:active {
+  box-shadow: inset 0 0px #00000033, 0 2px 0 0 #244cd1;
+  padding: 10px 0 6px 0;
+  margin-top: 24px;
+}
+#speed.fast {
+  background: #ffda08;
+  color: #02266c;
+}
+#startgame:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+#name-input.error {
+  animation: shake 300ms ease;
+  background: #ffd6d6;
+}
+@keyframes shake {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
 #startgame {
